@@ -73,6 +73,7 @@
               <button class="nav-item" data-page="charts" type="button"><i class="fa-solid fa-chart-column"></i><span>Gráficos</span></button>
               <button class="nav-item" data-page="ranking" type="button"><i class="fa-solid fa-trophy"></i><span>Ranking</span></button>
               <button class="nav-item" data-page="central" type="button"><i class="fa-solid fa-link"></i><span>Central</span></button>
+              <button class="nav-item" data-page="expenses" type="button"><i class="fa-solid fa-wallet"></i><span>Gastos</span></button>
               <button class="nav-item" data-page="profile" type="button"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
               <button class="nav-item" data-page="admin" type="button" id="adminTab" style="display:none;"><i class="fa-solid fa-shield"></i><span>Admin</span></button>
             </nav>
@@ -352,7 +353,7 @@
           <div class="card">
             <div class="card-header">
               <h2>Central de recursos</h2>
-              <p>Ferramentas globais (todos veem e editam)</p>
+              <p>Links e materiais úteis</p>
             </div>
 
             <div class="central-subnav" id="centralSubnav" style="padding: 0 16px 12px 16px;">
@@ -482,6 +483,165 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tabpanel" id="tab-expenses" style="display:none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="row space" style="align-items: flex-end; flex-wrap: wrap;">
+                <div>
+                  <h2>Gastos</h2>
+                  <p>Registre e gerencie seus gastos pessoais</p>
+                </div>
+                <button class="btn btn-secondary" id="exportExpensesCsvBtn" type="button">Exportar CSV</button>
+              </div>
+            </div>
+
+            <div class="grid4" style="padding: 0 16px 16px 16px;">
+              <div class="kpi">
+                <div class="muted">Total no mês</div>
+                <div class="kpi-value" id="expKpiTotal">R$ 0,00</div>
+              </div>
+              <div class="kpi">
+                <div class="muted">Média diária</div>
+                <div class="kpi-value" id="expKpiDailyAvg">R$ 0,00</div>
+              </div>
+              <div class="kpi">
+                <div class="muted">Maior gasto</div>
+                <div class="kpi-value" id="expKpiMax">R$ 0,00</div>
+              </div>
+              <div class="kpi">
+                <div class="muted">Categoria top</div>
+                <div class="kpi-value" id="expKpiTopCat">-</div>
+              </div>
+            </div>
+
+            <div class="card" style="margin: 0 16px 16px 16px;">
+              <div class="card-header">
+                <h3>Filtros e busca</h3>
+              </div>
+              <div class="row" style="gap: 10px; flex-wrap: wrap; padding: 0 16px 16px 16px; align-items: flex-end;">
+                <div class="field" style="padding:0; min-width: 220px;">
+                  <label>Buscar</label>
+                  <input id="expSearch" type="text" placeholder="Buscar por descrição" />
+                </div>
+                <div class="field" style="padding:0; min-width: 160px;">
+                  <label>Período</label>
+                  <select id="expPeriod" class="select">
+                    <option value="month">Este mês</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+                <div class="field" style="padding:0; min-width: 180px;">
+                  <label>Data inicial</label>
+                  <input id="expFrom" type="date" />
+                </div>
+                <div class="field" style="padding:0; min-width: 180px;">
+                  <label>Data final</label>
+                  <input id="expTo" type="date" />
+                </div>
+                <div class="field" style="padding:0; min-width: 200px;">
+                  <label>Categoria</label>
+                  <select id="expCategory" class="select"></select>
+                </div>
+                <div class="field" style="padding:0; min-width: 200px;">
+                  <label>Ordenar por</label>
+                  <select id="expOrder" class="select">
+                    <option value="date_desc">Data (mais recente)</option>
+                    <option value="date_asc">Data (mais antiga)</option>
+                    <option value="value_desc">Valor (maior)</option>
+                    <option value="value_asc">Valor (menor)</option>
+                  </select>
+                </div>
+                <div class="field" style="padding:0;">
+                  <label>&nbsp;</label>
+                  <button class="btn btn-primary" id="applyExpensesFilterBtn" type="button">Aplicar</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid2" style="padding: 0 16px 16px 16px;">
+              <div class="card">
+                <div class="card-header">
+                  <h3>Adicionar / Editar gasto</h3>
+                </div>
+                <div class="grid2" style="padding: 0 16px 16px 16px;">
+                  <input id="expEditingId" type="hidden" />
+                  <div class="field">
+                    <label>Data</label>
+                    <input id="expDate" type="date" />
+                  </div>
+                  <div class="field">
+                    <label>Valor (R$)</label>
+                    <input id="expValue" type="number" step="0.01" placeholder="0.00" />
+                  </div>
+                </div>
+                <div class="grid2" style="padding: 0 16px 16px 16px;">
+                  <div class="field">
+                    <label>Categoria</label>
+                    <select id="expCategoryForm" class="select"></select>
+                  </div>
+                  <div class="field">
+                    <label>Descrição</label>
+                    <input id="expDesc" type="text" placeholder="Ex: mercado" />
+                  </div>
+                </div>
+                <div class="row" style="padding: 0 16px 16px 16px; justify-content: space-between; flex-wrap: wrap;">
+                  <div class="row">
+                    <button class="btn btn-primary" id="saveExpenseBtn" type="button">Salvar</button>
+                    <button class="btn btn-ghost" id="clearExpenseBtn" type="button">Limpar</button>
+                  </div>
+                  <div class="muted" id="expFormHint"></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3>Visualizações</h3>
+                </div>
+                <div style="padding: 0 16px 16px 16px;">
+                  <div class="muted" style="padding-bottom: 10px;">Gastos por categoria</div>
+                  <canvas id="expByCategoryChart" height="160"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin: 0 16px 16px 16px;">
+              <div class="card-header">
+                <h3>Categorias</h3>
+                <p>Crie e organize suas categorias (somente você vê)</p>
+              </div>
+              <div style="padding: 0 16px 14px 16px;">
+                <input id="expCatEditingId" type="hidden" value="" />
+                <div class="grid2" style="margin-bottom: 10px;">
+                  <div class="field" style="padding:0;">
+                    <label>Nome</label>
+                    <input id="expCatName" type="text" placeholder="Ex: Mercado" />
+                  </div>
+                  <div class="field" style="padding:0;">
+                    <label>Cor</label>
+                    <input id="expCatColor" type="color" value="#60a5fa" style="height: 42px;" />
+                  </div>
+                </div>
+                <div class="row space" style="margin-bottom: 12px;">
+                  <div class="row" style="gap: 10px;">
+                    <button class="btn btn-secondary" id="expCatSaveBtn" type="button">Salvar categoria</button>
+                    <button class="btn btn-ghost" id="expCatClearBtn" type="button">Limpar</button>
+                  </div>
+                  <div class="muted" id="expCatHint"></div>
+                </div>
+                <div class="table" id="expCategoriesList" style="margin-bottom: 14px;"></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin: 0 16px 16px 16px;">
+              <div class="card-header">
+                <h3>Gastos</h3>
+              </div>
+              <div class="table" id="expensesTable"></div>
+              <div class="alert" id="expensesAlert" style="display:none; margin: 0 16px 16px 16px;"></div>
             </div>
           </div>
         </section>

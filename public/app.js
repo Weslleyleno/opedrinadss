@@ -882,6 +882,439 @@ function brl(value) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+let __expChartByCategory = null;
+let __lastExpensesRows = [];
+let __lastExpenseCategories = [];
+
+function monthKey(date) {
+  const d = date || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+function monthStartEndISOFromKey(ym) {
+  const m = String(ym || '').trim();
+  const parts = m.split('-');
+  if (parts.length !== 2) return monthStartEndISO(new Date());
+  const y = Number(parts[0]) || new Date().getFullYear();
+  const mm = (Number(parts[1]) || (new Date().getMonth() + 1)) - 1;
+  return monthStartEndISO(new Date(y, mm, 1));
+}
+
+function expensesSelectedRange() {
+  const period = String(el('expPeriod')?.value || 'month');
+  if (period === 'custom') {
+    const from = el('expFrom')?.value || '';
+    const to = el('expTo')?.value || '';
+    return { from, to };
+  }
+  const r = monthStartEndISO(new Date());
+  return { from: r.start, to: r.end };
+}
+
+async function loadExpenseCategories() {
+  const { data, error } = await sb
+    .from('personal_expense_categories')
+    .select('id, name, color, sort_order, updated_at')
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+function renderExpenseCategoriesList(rows) {
+  const root = el('expCategoriesList');
+  if (!root) return;
+  const list = rows || [];
+
+  const header = `
+    <div class="table-row header">
+      <div>Categoria</div>
+      <div>Cor</div>
+      <div>Ações</div>
+    </div>
+  `;
+
+  const body = list.map((c) => {
+    const id = String(c.id || '').trim();
+    const name = String(c.name || '').trim();
+    const color = String(c.color || '').trim() || '#60a5fa';
+    if (!id) return '';
+    return `
+      <div class="table-row">
+        <div><span class="badge" style="background:${escapeHtml(color)}; border-color:${escapeHtml(color)};">${escapeHtml(name)}</span></div>
+        <div class="muted">${escapeHtml(color)}</div>
+        <div class="row">
+          <button class="btn btn-secondary" type="button" data-exp-cat-action="edit" data-exp-cat-id="${escapeHtml(id)}">Editar</button>
+          <button class="btn" type="button" data-exp-cat-action="del" data-exp-cat-id="${escapeHtml(id)}">Excluir</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  root.innerHTML = header + (body || '<div class="muted" style="padding:10px 0;">Sem categorias ainda.</div>');
+}
+
+function clearExpenseCategoryForm() {
+  if (el('expCatEditingId')) el('expCatEditingId').value = '';
+  if (el('expCatName')) el('expCatName').value = '';
+  if (el('expCatColor')) el('expCatColor').value = '#60a5fa';
+  setHint('expCatHint', '');
+}
+
+async function refreshExpenseCategories() {
+  const cats = await loadExpenseCategories();
+  __lastExpenseCategories = cats || [];
+  renderExpenseCategorySelects(__lastExpenseCategories);
+  renderExpenseCategoriesList(__lastExpenseCategories);
+  return __lastExpenseCategories;
+}
+
+async function saveExpenseCategory() {
+  setHint('expCatHint', '');
+  hideAlert('expensesAlert');
+  if (!currentSession?.user?.id) return;
+
+  const idRaw = String(el('expCatEditingId')?.value || '').trim();
+  const id = idRaw ? Number(idRaw) : 0;
+  const name = String(el('expCatName')?.value || '').trim();
+  const color = String(el('expCatColor')?.value || '').trim() || '#60a5fa';
+
+  if (!name) {
+    setHint('expCatHint', 'Digite o nome.');
+    return;
+  }
+
+  try {
+    if (id) {
+      const { error } = await sb
+        .from('personal_expense_categories')
+        .update({ name, color })
+        .eq('id', id);
+      if (error) throw error;
+      toast('success', 'Salvo', 'Categoria atualizada.');
+    } else {
+      const { error } = await sb
+        .from('personal_expense_categories')
+        .insert({ user_id: currentSession.user.id, name, color });
+      if (error) throw error;
+      toast('success', 'Salvo', 'Categoria criada.');
+    }
+
+    clearExpenseCategoryForm();
+    await refreshExpenseCategories();
+    await refreshExpenses();
+  } catch (e) {
+    showAlert('expensesAlert', e?.message || 'Erro ao salvar categoria.');
+  }
+}
+
+function renderExpenseCategorySelects(rows) {
+  const list = rows || [];
+  const catSel = el('expCategory');
+  const formSel = el('expCategoryForm');
+  const options = [`<option value="all">Todas as categorias</option>`]
+    .concat(list.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`))
+    .join('');
+
+  if (catSel) catSel.innerHTML = options;
+
+  const formOptions = [`<option value="">Sem categoria</option>`]
+    .concat(list.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`))
+    .join('');
+  if (formSel) formSel.innerHTML = formOptions;
+}
+
+async function loadExpenses(filters) {
+  const f = filters || {};
+  const from = String(f.from || '').trim();
+  const to = String(f.to || '').trim();
+  const q = String(f.search || '').trim().toLowerCase();
+  const categoryId = String(f.categoryId || '').trim();
+  const order = String(f.order || 'date_desc');
+
+  let query = sb
+    .from('personal_expenses')
+    .select('id, expense_date, amount, description, category_id, created_at')
+    .order('expense_date', { ascending: order === 'date_asc' })
+    .order('id', { ascending: false });
+
+  if (from) query = query.gte('expense_date', from);
+  if (to) query = query.lte('expense_date', to);
+  if (categoryId && categoryId !== 'all') query = query.eq('category_id', categoryId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  let rows = data || [];
+
+  if (q) {
+    rows = rows.filter((r) => String(r.description || '').toLowerCase().includes(q));
+  }
+
+  if (order === 'value_desc') rows = rows.slice().sort((a, b) => toNumber(b.amount) - toNumber(a.amount));
+  if (order === 'value_asc') rows = rows.slice().sort((a, b) => toNumber(a.amount) - toNumber(b.amount));
+
+  return rows;
+}
+
+function renderExpensesTable(rows) {
+  const root = el('expensesTable');
+  if (!root) return;
+  const list = rows || [];
+
+  const catMap = new Map((__lastExpenseCategories || []).map((c) => [String(c.id), c]));
+
+  const header = `
+    <div class="table-row header">
+      <div>Data</div>
+      <div>Descrição</div>
+      <div>Categoria</div>
+      <div>Valor</div>
+      <div>Ações</div>
+    </div>
+  `;
+
+  const body = list.map((r) => {
+    const id = String(r.id);
+    const cat = r.category_id ? catMap.get(String(r.category_id)) : null;
+    const catName = cat?.name ? String(cat.name) : '-';
+    const catColor = cat?.color ? String(cat.color) : '';
+    const catBadge = catColor
+      ? `<span class="badge" style="background:${escapeHtml(catColor)}; border-color:${escapeHtml(catColor)};">${escapeHtml(catName)}</span>`
+      : `<span class="muted">${escapeHtml(catName)}</span>`;
+
+    return `
+      <div class="table-row">
+        <div class="muted">${escapeHtml(r.expense_date || '')}</div>
+        <div>${escapeHtml(r.description || '')}</div>
+        <div>${catBadge}</div>
+        <div><b>${brl(r.amount)}</b></div>
+        <div class="row">
+          <button class="btn btn-secondary" type="button" data-exp-action="edit" data-exp-id="${escapeHtml(id)}">Editar</button>
+          <button class="btn" type="button" data-exp-action="del" data-exp-id="${escapeHtml(id)}">Excluir</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  root.innerHTML = header + (body || '<div class="muted" style="padding:10px 0;">Sem gastos no período.</div>');
+}
+
+function updateExpensesKpis(rows, range) {
+  const list = rows || [];
+  const total = list.reduce((acc, r) => acc + toNumber(r.amount), 0);
+  const max = list.reduce((acc, r) => Math.max(acc, toNumber(r.amount)), 0);
+
+  const from = String(range?.from || '');
+  const to = String(range?.to || '');
+  let days = 0;
+  if (from && to) {
+    const a = new Date(from);
+    const b = new Date(to);
+    if (!Number.isNaN(a.getTime()) && !Number.isNaN(b.getTime())) {
+      days = Math.max(1, Math.floor((b.getTime() - a.getTime()) / 86400000) + 1);
+    }
+  }
+
+  const dailyAvg = days > 0 ? (total / days) : 0;
+
+  const catMap = new Map((__lastExpenseCategories || []).map((c) => [String(c.id), c]));
+  const totalsByCat = new Map();
+  list.forEach((r) => {
+    const k = r.category_id ? String(r.category_id) : 'none';
+    totalsByCat.set(k, (totalsByCat.get(k) || 0) + toNumber(r.amount));
+  });
+  let topKey = '';
+  let topVal = -1;
+  totalsByCat.forEach((v, k) => {
+    if (v > topVal) { topVal = v; topKey = k; }
+  });
+  let topCat = '-';
+  if (topKey) {
+    if (topKey === 'none') topCat = 'Sem categoria';
+    else topCat = catMap.get(topKey)?.name || '-';
+  }
+
+  setText('expKpiTotal', brl(total));
+  setText('expKpiDailyAvg', brl(dailyAvg));
+  setText('expKpiMax', brl(max));
+  setText('expKpiTopCat', topCat || '-');
+}
+
+function renderExpensesCategoryChart(rows) {
+  const canvas = el('expByCategoryChart');
+  if (!canvas || !window.Chart) return;
+  const list = rows || [];
+
+  const catMap = new Map((__lastExpenseCategories || []).map((c) => [String(c.id), c]));
+  const totalsByCat = new Map();
+  list.forEach((r) => {
+    const k = r.category_id ? String(r.category_id) : 'none';
+    totalsByCat.set(k, (totalsByCat.get(k) || 0) + toNumber(r.amount));
+  });
+
+  const entries = Array.from(totalsByCat.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const labels = entries.map(([k]) => {
+    if (k === 'none') return 'Sem categoria';
+    return catMap.get(k)?.name || 'Categoria';
+  });
+  const values = entries.map(([, v]) => Math.round(v * 100) / 100);
+  const colors = entries.map(([k]) => {
+    if (k === 'none') return 'rgba(148,163,184,0.8)';
+    return catMap.get(k)?.color || 'rgba(96,165,250,0.8)';
+  });
+
+  const cfg = {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor: colors, borderWidth: 1 }] },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#fff' } } } }
+  };
+
+  try {
+    if (__expChartByCategory) {
+      __expChartByCategory.destroy();
+    }
+  } catch {
+    // ignore
+  }
+  __expChartByCategory = new window.Chart(canvas, cfg);
+}
+
+function clearExpenseForm() {
+  if (el('expEditingId')) el('expEditingId').value = '';
+  if (el('expDate')) el('expDate').value = todayISO();
+  if (el('expValue')) el('expValue').value = '';
+  if (el('expDesc')) el('expDesc').value = '';
+  if (el('expCategoryForm')) el('expCategoryForm').value = '';
+  setHint('expFormHint', '');
+}
+
+async function refreshExpenses() {
+  hideAlert('expensesAlert');
+  const range = expensesSelectedRange();
+  const categoryId = String(el('expCategory')?.value || 'all');
+  const search = String(el('expSearch')?.value || '');
+  const order = String(el('expOrder')?.value || 'date_desc');
+  const rows = await loadExpenses({ from: range.from, to: range.to, categoryId, search, order });
+  __lastExpensesRows = rows || [];
+  renderExpensesTable(rows);
+  updateExpensesKpis(rows, range);
+  renderExpensesCategoryChart(rows);
+  return rows;
+}
+
+async function saveExpense() {
+  const hint = el('expFormHint');
+  if (hint) hint.textContent = '';
+  hideAlert('expensesAlert');
+  if (!currentSession?.user?.id) {
+    showAlert('expensesAlert', 'Sessão inválida. Faça login novamente.');
+    return;
+  }
+
+  const expense_date = String(el('expDate')?.value || '').trim();
+  const amount = toNumber(el('expValue')?.value);
+  const description = String(el('expDesc')?.value || '').trim();
+  const categoryRaw = String(el('expCategoryForm')?.value || '').trim();
+  const category_id = categoryRaw ? Number(categoryRaw) : null;
+  const idRaw = String(el('expEditingId')?.value || '').trim();
+  const id = idRaw ? Number(idRaw) : 0;
+
+  if (!expense_date) {
+    if (hint) hint.textContent = 'Preencha a data.';
+    return;
+  }
+  if (!description) {
+    if (hint) hint.textContent = 'Preencha a descrição.';
+    return;
+  }
+  if (amount <= 0) {
+    if (hint) hint.textContent = 'Digite um valor maior que 0.';
+    return;
+  }
+
+  try {
+    if (id) {
+      const { error } = await sb
+        .from('personal_expenses')
+        .update({ expense_date, amount, description, category_id })
+        .eq('id', id);
+      if (error) throw error;
+      toast('success', 'Salvo', 'Gasto atualizado.');
+    } else {
+      const { error } = await sb
+        .from('personal_expenses')
+        .insert({ user_id: currentSession.user.id, expense_date, amount, description, category_id });
+      if (error) throw error;
+      toast('success', 'Salvo', 'Gasto criado.');
+    }
+
+    clearExpenseForm();
+    await refreshExpenses();
+  } catch (e) {
+    showAlert('expensesAlert', e?.message || 'Erro ao salvar gasto.');
+  }
+}
+
+function setExpensesRangeInputsEnabled() {
+  const period = String(el('expPeriod')?.value || 'month');
+  const enabled = period === 'custom';
+  const a = el('expFrom');
+  const b = el('expTo');
+  if (a) a.disabled = !enabled;
+  if (b) b.disabled = !enabled;
+  if (!enabled) {
+    const r = monthStartEndISO(new Date());
+    if (a) a.value = r.start;
+    if (b) b.value = r.end;
+  }
+}
+
+async function initExpensesTab() {
+  if (!await ensureSupabaseReady()) return;
+  try {
+    await refreshExpenseCategories();
+
+    // defaults
+    if (el('expDate') && !el('expDate').value) el('expDate').value = todayISO();
+    if (el('expPeriod') && !el('expPeriod').value) el('expPeriod').value = 'month';
+    setExpensesRangeInputsEnabled();
+
+    await refreshExpenses();
+  } catch (e) {
+    showAlert('expensesAlert', e?.message || 'Erro ao inicializar gastos.');
+  }
+}
+
+function exportExpensesCsv() {
+  const rows = Array.isArray(__lastExpensesRows) ? __lastExpensesRows : [];
+  const catMap = new Map((__lastExpenseCategories || []).map((c) => [String(c.id), c]));
+  const head = ['data', 'descricao', 'categoria', 'valor'];
+  const lines = [head.join(';')];
+  rows.forEach((r) => {
+    const cat = r.category_id ? (catMap.get(String(r.category_id))?.name || '') : '';
+    const cols = [
+      String(r.expense_date || ''),
+      String(r.description || '').replaceAll(';', ','),
+      String(cat || '').replaceAll(';', ','),
+      String(toNumber(r.amount)).replace('.', ',')
+    ];
+    lines.push(cols.join(';'));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gastos_${monthKey(new Date())}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  try { a.remove(); } catch {}
+  setTimeout(() => {
+    try { URL.revokeObjectURL(url); } catch {}
+  }, 5000);
+}
+
 function toNumber(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -1291,6 +1724,7 @@ function showPage(page) {
   el('tab-charts').style.display = page === 'charts' ? 'block' : 'none';
   el('tab-ranking').style.display = page === 'ranking' ? 'block' : 'none';
   el('tab-central').style.display = page === 'central' ? 'block' : 'none';
+  el('tab-expenses').style.display = page === 'expenses' ? 'block' : 'none';
   el('tab-profile').style.display = page === 'profile' ? 'block' : 'none';
   el('tab-admin').style.display = page === 'admin' ? 'block' : 'none';
 }
@@ -1300,6 +1734,7 @@ function getCurrentPage() {
   if (el('tab-charts')?.style.display !== 'none') return 'charts';
   if (el('tab-ranking')?.style.display !== 'none') return 'ranking';
   if (el('tab-central')?.style.display !== 'none') return 'central';
+  if (el('tab-expenses')?.style.display !== 'none') return 'expenses';
   if (el('tab-profile')?.style.display !== 'none') return 'profile';
   if (el('tab-admin')?.style.display !== 'none') return 'admin';
   return 'ops';
@@ -2369,6 +2804,14 @@ function setupTabs() {
         }
       }
 
+      if (tab === 'expenses') {
+        try {
+          await initExpensesTab();
+        } catch (e) {
+          showAlert('expensesAlert', e?.message || 'Erro ao carregar gastos.');
+        }
+      }
+
       if (tab === 'admin') {
         const input = el('monthlyRewardInput');
         if (input) {
@@ -2492,6 +2935,140 @@ async function boot() {
   }
   try { console.log('[boot] start'); } catch {}
   const loginBtn = el('loginBtn');
+
+  const applyExpensesFilterBtn = el('applyExpensesFilterBtn');
+  if (applyExpensesFilterBtn) {
+    applyExpensesFilterBtn.addEventListener('click', async () => {
+      if (!await ensureSupabaseReady()) return;
+      await refreshExpenses();
+    });
+  }
+
+  const expPeriod = el('expPeriod');
+  if (expPeriod) {
+    expPeriod.addEventListener('change', async () => {
+      setExpensesRangeInputsEnabled();
+      if (!await ensureSupabaseReady()) return;
+      await refreshExpenses();
+    });
+  }
+
+  const exportExpensesCsvBtn = el('exportExpensesCsvBtn');
+  if (exportExpensesCsvBtn) {
+    exportExpensesCsvBtn.addEventListener('click', async () => {
+      if (!await ensureSupabaseReady()) return;
+      exportExpensesCsv();
+      toast('success', 'Exportado', 'CSV gerado.');
+    });
+  }
+
+  const saveExpenseBtn = el('saveExpenseBtn');
+  if (saveExpenseBtn) {
+    saveExpenseBtn.addEventListener('click', async () => {
+      if (!await ensureSupabaseReady()) return;
+      await saveExpense();
+    });
+  }
+
+  const clearExpenseBtn = el('clearExpenseBtn');
+  if (clearExpenseBtn) {
+    clearExpenseBtn.addEventListener('click', () => {
+      clearExpenseForm();
+    });
+  }
+
+  const expensesTable = el('expensesTable');
+  if (expensesTable) {
+    expensesTable.addEventListener('click', async (ev) => {
+      const btn = ev.target?.closest?.('[data-exp-action]');
+      if (!btn) return;
+      if (!await ensureSupabaseReady()) return;
+
+      const action = btn.getAttribute('data-exp-action');
+      const idStr = btn.getAttribute('data-exp-id');
+      const id = idStr ? Number(idStr) : 0;
+      if (!action || !id) return;
+
+      const row = (Array.isArray(__lastExpensesRows) ? __lastExpensesRows : []).find((x) => Number(x?.id) === id) || null;
+      if (!row) return;
+
+      if (action === 'edit') {
+        if (el('expEditingId')) el('expEditingId').value = String(row.id);
+        if (el('expDate')) el('expDate').value = String(row.expense_date || '');
+        if (el('expValue')) el('expValue').value = String(row.amount ?? '');
+        if (el('expDesc')) el('expDesc').value = String(row.description || '');
+        if (el('expCategoryForm')) el('expCategoryForm').value = row.category_id ? String(row.category_id) : '';
+        toast('success', 'Editando', 'Você está editando um gasto.');
+        return;
+      }
+
+      if (action === 'del') {
+        const ok = await confirmModal('Confirmar Remoção', 'Excluir este gasto?');
+        if (!ok) return;
+        const { error } = await sb.from('personal_expenses').delete().eq('id', row.id);
+        if (error) {
+          showAlert('expensesAlert', error.message);
+          return;
+        }
+        toast('success', 'Removido', 'Gasto removido.');
+        await refreshExpenses();
+      }
+    });
+  }
+
+  const expCatSaveBtn = el('expCatSaveBtn');
+  if (expCatSaveBtn) {
+    expCatSaveBtn.addEventListener('click', async () => {
+      if (!await ensureSupabaseReady()) return;
+      await saveExpenseCategory();
+    });
+  }
+
+  const expCatClearBtn = el('expCatClearBtn');
+  if (expCatClearBtn) {
+    expCatClearBtn.addEventListener('click', () => {
+      clearExpenseCategoryForm();
+    });
+  }
+
+  const expCategoriesList = el('expCategoriesList');
+  if (expCategoriesList) {
+    expCategoriesList.addEventListener('click', async (ev) => {
+      const btn = ev.target?.closest?.('[data-exp-cat-action]');
+      if (!btn) return;
+      if (!await ensureSupabaseReady()) return;
+
+      const action = btn.getAttribute('data-exp-cat-action');
+      const idStr = btn.getAttribute('data-exp-cat-id');
+      const id = idStr ? Number(idStr) : 0;
+      if (!action || !id) return;
+
+      const row = (Array.isArray(__lastExpenseCategories) ? __lastExpenseCategories : []).find((x) => Number(x?.id) === id) || null;
+      if (!row) return;
+
+      if (action === 'edit') {
+        if (el('expCatEditingId')) el('expCatEditingId').value = String(row.id);
+        if (el('expCatName')) el('expCatName').value = String(row.name || '');
+        if (el('expCatColor')) el('expCatColor').value = String(row.color || '#60a5fa');
+        setHint('expCatHint', 'Editando...');
+        return;
+      }
+
+      if (action === 'del') {
+        const ok = await confirmModal('Confirmar Remoção', 'Excluir esta categoria?');
+        if (!ok) return;
+        const { error } = await sb.from('personal_expense_categories').delete().eq('id', row.id);
+        if (error) {
+          showAlert('expensesAlert', error.message);
+          return;
+        }
+        toast('success', 'Removido', 'Categoria removida.');
+        clearExpenseCategoryForm();
+        await refreshExpenseCategories();
+        await refreshExpenses();
+      }
+    });
+  }
 
   const opsAdminMode = el('opsAdminMode');
   if (opsAdminMode) {

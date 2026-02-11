@@ -579,9 +579,10 @@ body.theme-black .field .select optgroup {
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; }
 .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; }
 
 @media (max-width: 860px) {
-  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
 }
 
 .row { display: flex; gap: 10px; align-items: center; }

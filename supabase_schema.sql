@@ -192,6 +192,90 @@ using (true);
 
 grant select, insert, update, delete on public.central_pages to authenticated;
 
+-- Gastos pessoais (individual por usuário)
+create table if not exists public.personal_expense_categories (
+  id bigserial primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  color text not null default '#60a5fa',
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+alter table public.personal_expense_categories enable row level security;
+
+create policy "personal_expense_categories_select_own"
+on public.personal_expense_categories
+for select
+to authenticated
+using (user_id = auth.uid());
+
+create policy "personal_expense_categories_insert_own"
+on public.personal_expense_categories
+for insert
+to authenticated
+with check (user_id = auth.uid());
+
+create policy "personal_expense_categories_update_own"
+on public.personal_expense_categories
+for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+create policy "personal_expense_categories_delete_own"
+on public.personal_expense_categories
+for delete
+to authenticated
+using (user_id = auth.uid());
+
+grant select, insert, update, delete on public.personal_expense_categories to authenticated;
+
+create table if not exists public.personal_expenses (
+  id bigserial primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  expense_date date not null,
+  amount numeric(12,2) not null default 0,
+  description text not null default '',
+  category_id bigint references public.personal_expense_categories(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists personal_expenses_user_date_idx
+on public.personal_expenses (user_id, expense_date);
+
+alter table public.personal_expenses enable row level security;
+
+create policy "personal_expenses_select_own"
+on public.personal_expenses
+for select
+to authenticated
+using (user_id = auth.uid());
+
+create policy "personal_expenses_insert_own"
+on public.personal_expenses
+for insert
+to authenticated
+with check (user_id = auth.uid());
+
+create policy "personal_expenses_update_own"
+on public.personal_expenses
+for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+create policy "personal_expenses_delete_own"
+on public.personal_expenses
+for delete
+to authenticated
+using (user_id = auth.uid());
+
+grant select, insert, update, delete on public.personal_expenses to authenticated;
+
 create table if not exists public.creatives (
   id bigserial primary key,
   token text not null,
