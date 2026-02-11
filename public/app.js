@@ -1776,7 +1776,7 @@ async function loadRanking() {
   const list = el('rankingList');
   if (!list) return;
 
-  const ym = range ? daysInMonth(range.y, range.m) : 0;
+  const ym = range ? `${String(range.y)}-${String(range.m).padStart(2, '0')}` : '';
   __lastRankingYm = ym;
 
   const now = new Date();
