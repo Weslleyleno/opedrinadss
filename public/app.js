@@ -1918,6 +1918,65 @@ async function checkAdmin() {
   }
 }
 
+async function ensureProfile(session, usernameForUpsert) {
+  if (!session?.user?.id) throw new Error('Sessão inválida.');
+  if (!await ensureSupabaseReady()) throw new Error('Supabase não inicializou.');
+
+  const userId = session.user.id;
+  const email = String(session.user.email || '').trim();
+  const fallbackUsername = (usernameForUpsert || '').trim() || (email ? email.split('@')[0] : '');
+
+  // 1) Tenta carregar perfil existente
+  let prof = null;
+  {
+    const { data, error } = await sb
+      .from('profiles')
+      .select('id, username, is_admin, chart_mode, avatar_id, avatar_url, monthly_goal')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao carregar perfil.');
+    }
+    prof = data || null;
+  }
+
+  // 2) Se não existe, cria
+  if (!prof) {
+    const insertPayload = {
+      id: userId,
+      username: fallbackUsername || null,
+      is_admin: false
+    };
+
+    const { data, error } = await sb
+      .from('profiles')
+      .insert(insertPayload)
+      .select('id, username, is_admin, chart_mode, avatar_id, avatar_url, monthly_goal')
+      .single();
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao criar perfil.');
+    }
+    prof = data || null;
+  }
+
+  // 3) Se existe mas está sem username, tenta completar
+  if (prof && !String(prof.username || '').trim() && fallbackUsername) {
+    const { data, error } = await sb
+      .from('profiles')
+      .update({ username: fallbackUsername })
+      .eq('id', userId)
+      .select('id, username, is_admin, chart_mode, avatar_id, avatar_url, monthly_goal')
+      .single();
+
+    if (!error && data) prof = data;
+  }
+
+  currentProfile = prof;
+  return prof;
+}
+
 async function grantAdmin() {
   hideAlert('adminAlert');
   const email = (el('adminEmail').value || '').trim();
