@@ -165,6 +165,89 @@ function showAlert(targetId, message) {
   box.style.display = 'block';
 }
 
+function toast(type, title, text, ms) {
+  const root = el('uiToasts');
+  if (!root) return;
+  const t = String(type || '').trim() || 'success';
+  const ttl = String(title || '').trim();
+  const msg = String(text || '').trim();
+  const timeout = Number(ms) > 0 ? Number(ms) : 2600;
+
+  const node = document.createElement('div');
+  node.className = `toast ${t}`;
+  node.innerHTML = `
+    <div class="toast-title">${escapeHtml(ttl || (t === 'error' ? 'Erro' : t === 'warn' ? 'Atenção' : 'Ok'))}</div>
+    <div class="toast-text">${escapeHtml(msg || '')}</div>
+  `;
+  root.appendChild(node);
+
+  setTimeout(() => {
+    try { node.remove(); } catch {}
+  }, timeout);
+}
+
+let __modalPromise = null;
+let __modalResolve = null;
+
+function confirmModal(title, text, opts) {
+  if (__modalPromise) return __modalPromise;
+  const backdrop = el('uiModal');
+  const titleEl = el('uiModalTitle');
+  const textEl = el('uiModalText');
+  const iconEl = el('uiModalIcon');
+  const btnCancel = el('uiModalCancel');
+  const btnOk = el('uiModalConfirm');
+  if (!backdrop || !btnCancel || !btnOk || !titleEl || !textEl || !iconEl) {
+    return Promise.resolve(window.confirm(text || title || 'Confirmar?'));
+  }
+
+  const o = opts && typeof opts === 'object' ? opts : {};
+  const okLabel = String(o.okLabel || 'Confirmar');
+  const cancelLabel = String(o.cancelLabel || 'Cancelar');
+  const icon = String(o.icon || 'fa-triangle-exclamation');
+  const iconBg = String(o.iconBg || 'rgba(251, 191, 36, 0.18)');
+  const iconBorder = String(o.iconBorder || 'rgba(251, 191, 36, 0.28)');
+
+  titleEl.textContent = String(title || 'Confirmar');
+  textEl.textContent = String(text || '');
+  iconEl.innerHTML = `<i class="fa-solid ${escapeHtml(icon)}" aria-hidden="true"></i>`;
+  iconEl.style.background = iconBg;
+  iconEl.style.borderColor = iconBorder;
+  btnOk.textContent = okLabel;
+  btnCancel.textContent = cancelLabel;
+
+  backdrop.style.display = 'grid';
+
+  const cleanup = () => {
+    backdrop.style.display = 'none';
+    btnCancel.onclick = null;
+    btnOk.onclick = null;
+    backdrop.onclick = null;
+    __modalPromise = null;
+    __modalResolve = null;
+  };
+
+  __modalPromise = new Promise((resolve) => {
+    __modalResolve = resolve;
+    btnCancel.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+    btnOk.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+    backdrop.onclick = (ev) => {
+      if (ev?.target === backdrop) {
+        cleanup();
+        resolve(false);
+      }
+    };
+  });
+
+  return __modalPromise;
+}
+
 function setHint(targetId, message) {
   const box = el(targetId);
   if (!box) return;
@@ -701,6 +784,7 @@ async function copyToClipboard(text) {
   try {
     if (navigator?.clipboard?.writeText) {
       await navigator.clipboard.writeText(t);
+      toast('success', 'Copiado', 'Texto copiado para a área de transferência.');
       return;
     }
   } catch {
@@ -716,14 +800,17 @@ async function copyToClipboard(text) {
     ta.style.top = '0';
     document.body.appendChild(ta);
     ta.select();
-    document.execCommand('copy');
-    ta.remove();
+    try {
+      document.execCommand('copy');
+      toast('success', 'Copiado', 'Texto copiado para a área de transferência.');
+    } catch {
+      toast('error', 'Erro', 'Não foi possível copiar.');
+    }
+    try { ta.remove(); } catch {}
   } catch {
-    // ignore
+    toast('error', 'Erro', 'Não foi possível copiar.');
   }
 }
-
-function renderCreatives(rows) {
   const root = el('creativesList');
   if (!root) return;
 
@@ -1481,7 +1568,7 @@ function renderOpsTable(rows) {
 
       if (action === 'delete') {
         hideAlert('opAlert');
-        const ok = window.confirm('Tem certeza que deseja excluir esta operação?');
+        const ok = await confirmModal('Confirmar Remoção', 'Tem certeza que deseja excluir esta operação?');
         if (!ok) return;
 
         if (isOpsAdminMode()) {
@@ -1499,6 +1586,7 @@ function renderOpsTable(rows) {
             return;
           }
         }
+        toast('success', 'Removido', 'Operação removida.');
         await refreshOpsTable();
         await refreshChart();
       }
@@ -1595,6 +1683,7 @@ async function saveOperation() {
         return;
       }
     }
+    toast('success', 'Salvo', 'Operação atualizada.');
   } else {
     if (isOpsAdminMode()) {
       try {
@@ -1621,6 +1710,7 @@ async function saveOperation() {
         return;
       }
     }
+    toast('success', 'Salvo', 'Operação criada.');
   }
 
   clearOperationForm();
@@ -2695,7 +2785,7 @@ async function boot() {
       }
 
       if (action === 'del') {
-        const ok = window.confirm('Excluir este proxy?');
+        const ok = await confirmModal('Confirmar Remoção', 'Excluir este proxy?');
         if (!ok) return;
         const { error } = await sb.from('proxies').delete().eq('id', id);
         if (error) {
@@ -2789,7 +2879,7 @@ async function boot() {
       }
 
       if (action === 'del') {
-        const ok = window.confirm('Excluir este status?');
+        const ok = await confirmModal('Confirmar Remoção', 'Excluir este status?');
         if (!ok) return;
         const { error } = await sb.from('creative_statuses').delete().eq('id', id);
         if (error) {
@@ -2891,7 +2981,7 @@ async function boot() {
       }
 
       if (action === 'del') {
-        const ok = window.confirm('Excluir este criativo?');
+        const ok = await confirmModal('Confirmar Remoção', 'Excluir este criativo?');
         if (!ok) return;
         const { error } = await sb.from('creatives').delete().eq('id', id);
         if (error) {
