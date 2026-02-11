@@ -1378,6 +1378,19 @@ function calcResult() {
 async function loadOperations(from, to) {
   if (!currentSession) return [];
 
+  // Admin mode: permite ver/editar operações de outro usuário via Netlify Function (service role)
+  try {
+    if (isOpsAdminMode()) {
+      const targetUserId = getOpsTargetUserId();
+      const data = await adminOperationsApi('GET', null, { target_user_id: targetUserId, from: from || '', to: to || '' });
+      const rows = data?.rows || [];
+      try { window.__lastOpsRows = rows; } catch {}
+      return rows;
+    }
+  } catch (e) {
+    throw new Error(e?.message || 'Erro ao carregar operações (admin).');
+  }
+
   let query = sb
     .from('operations')
     .select('id, op_date, profit, operational_cost, result, note, created_at')
@@ -1470,10 +1483,21 @@ function renderOpsTable(rows) {
         hideAlert('opAlert');
         const ok = window.confirm('Tem certeza que deseja excluir esta operação?');
         if (!ok) return;
-        const { error } = await sb.from('operations').delete().eq('id', id);
-        if (error) {
-          showAlert('opAlert', `Erro ao excluir: ${error.message}`);
-          return;
+
+        if (isOpsAdminMode()) {
+          try {
+            const targetUserId = getOpsTargetUserId();
+            await adminOperationsApi('DELETE', { id, target_user_id: targetUserId });
+          } catch (e) {
+            showAlert('opAlert', `Erro ao excluir: ${e?.message || 'Falha ao excluir.'}`);
+            return;
+          }
+        } else {
+          const { error } = await sb.from('operations').delete().eq('id', id);
+          if (error) {
+            showAlert('opAlert', `Erro ao excluir: ${error.message}`);
+            return;
+          }
         }
         await refreshOpsTable();
         await refreshChart();
@@ -1544,23 +1568,58 @@ async function saveOperation() {
   el('dupHint').textContent = '';
 
   if (editingId) {
-    const { error } = await sb
-      .from('operations')
-      .update({ op_date: opDate, profit, operational_cost: operationalCost, result, note })
-      .eq('id', editingId);
+    if (isOpsAdminMode()) {
+      try {
+        const targetUserId = getOpsTargetUserId();
+        await adminOperationsApi('PUT', {
+          id: editingId,
+          target_user_id: targetUserId,
+          op_date: opDate,
+          profit,
+          operational_cost: operationalCost,
+          result,
+          note
+        });
+      } catch (e) {
+        showAlert('opAlert', `Erro ao atualizar: ${e?.message || 'Falha ao atualizar.'}`);
+        return;
+      }
+    } else {
+      const { error } = await sb
+        .from('operations')
+        .update({ op_date: opDate, profit, operational_cost: operationalCost, result, note })
+        .eq('id', editingId);
 
-    if (error) {
-      showAlert('opAlert', `Erro ao editar: ${error.message}`);
-      return;
+      if (error) {
+        showAlert('opAlert', `Erro ao atualizar: ${error.message}`);
+        return;
+      }
     }
   } else {
-    const { error } = await sb
-      .from('operations')
-      .insert({ user_id: currentSession.user.id, op_date: opDate, profit, operational_cost: operationalCost, result, note });
+    if (isOpsAdminMode()) {
+      try {
+        const targetUserId = getOpsTargetUserId();
+        await adminOperationsApi('POST', {
+          target_user_id: targetUserId,
+          op_date: opDate,
+          profit,
+          operational_cost: operationalCost,
+          result,
+          note
+        });
+      } catch (e) {
+        showAlert('opAlert', `Erro ao salvar: ${e?.message || 'Falha ao salvar.'}`);
+        return;
+      }
+    } else {
+      const { error } = await sb
+        .from('operations')
+        .insert({ user_id: currentSession.user.id, op_date: opDate, profit, operational_cost: operationalCost, result, note });
 
-    if (error) {
-      showAlert('opAlert', `Erro ao salvar: ${error.message}`);
-      return;
+      if (error) {
+        showAlert('opAlert', `Erro ao salvar: ${error.message}`);
+        return;
+      }
     }
   }
 
@@ -1903,6 +1962,17 @@ async function checkAdmin() {
   const btn = el('adminTab');
   if (btn) btn.style.display = isAdmin ? 'inline-flex' : 'none';
 
+  const opsAdminControls = el('opsAdminControls');
+  if (opsAdminControls) opsAdminControls.style.display = isAdmin ? '' : 'none';
+
+  if (isAdmin) {
+    try {
+      await refreshOpsAdminUsersSelect();
+    } catch {
+      // ignore
+    }
+  }
+
   const csName = el('creativeStatusName');
   const csColor = el('creativeStatusColor');
   const csSave = el('creativeStatusSaveBtn');
@@ -2039,6 +2109,67 @@ async function adminUsersApi(method, payload) {
     throw new Error(data?.error || 'Erro ao comunicar com admin-users.');
   }
   return data;
+}
+
+async function adminOperationsApi(method, payload, query) {
+  const token = currentSession?.access_token || '';
+  if (!token) throw new Error('Sessão inválida. Faça login novamente.');
+
+  let url = '/api/admin-operations';
+  if (method === 'GET' && query && typeof query === 'object') {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([k, v]) => {
+      if (v === null || typeof v === 'undefined') return;
+      const s = String(v).trim();
+      if (!s) return;
+      params.set(k, s);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: method === 'GET' ? undefined : (payload ? JSON.stringify(payload) : undefined)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || 'Erro ao comunicar com admin-operations.');
+  return data;
+}
+
+function isOpsAdminMode() {
+  return Boolean(currentProfile?.is_admin) && Boolean(el('opsAdminMode')?.checked);
+}
+
+function getOpsTargetUserId() {
+  const id = String(el('opsAdminUser')?.value || '').trim();
+  if (!id) throw new Error('Selecione um usuário para editar.');
+  return id;
+}
+
+async function refreshOpsAdminUsersSelect() {
+  const sel = el('opsAdminUser');
+  if (!sel) return;
+  if (!currentProfile?.is_admin) return;
+
+  const users = Array.isArray(window.__lastAdminUsers) ? window.__lastAdminUsers : await refreshAdminUsers();
+  const opts = (users || []).map((u) => {
+    const id = String(u?.id || '').trim();
+    const email = String(u?.email || '').trim();
+    if (!id) return '';
+    return `<option value="${escapeHtml(id)}">${escapeHtml(email || id)}</option>`;
+  }).join('');
+  sel.innerHTML = opts || '<option value="">Sem usuários</option>';
+
+  if (!sel.value && currentSession?.user?.id) {
+    // default: selecionar o próprio usuário para facilitar
+    sel.value = String(currentSession.user.id);
+  }
 }
 
 function clearAdminUserForm() {
@@ -2269,6 +2400,33 @@ async function boot() {
   }
   try { console.log('[boot] start'); } catch {}
   const loginBtn = el('loginBtn');
+
+  const opsAdminMode = el('opsAdminMode');
+  if (opsAdminMode) {
+    opsAdminMode.addEventListener('change', async () => {
+      if (!await ensureSupabaseReady()) return;
+      try {
+        await refreshOpsTable();
+        await refreshChart();
+      } catch (e) {
+        showAlert('opAlert', e?.message || 'Erro ao recarregar operações.');
+      }
+    });
+  }
+
+  const opsAdminUser = el('opsAdminUser');
+  if (opsAdminUser) {
+    opsAdminUser.addEventListener('change', async () => {
+      if (!await ensureSupabaseReady()) return;
+      if (!isOpsAdminMode()) return;
+      try {
+        await refreshOpsTable();
+        await refreshChart();
+      } catch (e) {
+        showAlert('opAlert', e?.message || 'Erro ao recarregar operações.');
+      }
+    });
+  }
 
   if (!loginBtn) {
     try { console.warn('[boot] loginBtn não encontrado'); } catch {}

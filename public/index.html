@@ -168,6 +168,16 @@
                   <p>Editar e excluir operações</p>
                 </div>
                 <div class="row" style="align-items: flex-end; gap: 10px; flex-wrap: wrap;">
+                  <div class="field" id="opsAdminControls" style="padding:0; min-width: 240px; display:none;">
+                    <label>Admin</label>
+                    <div class="row" style="gap:10px; align-items:center; flex-wrap: wrap;">
+                      <label class="row" style="gap:8px;">
+                        <input id="opsAdminMode" type="checkbox" />
+                        <span class="muted">Editar operações de outro usuário</span>
+                      </label>
+                      <select id="opsAdminUser" class="select" style="min-width: 220px;"></select>
+                    </div>
+                  </div>
                   <div class="field" style="padding:0; min-width: 120px;">
                     <label>Ano</label>
                     <select id="opsYear" class="select"></select>
