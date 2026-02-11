@@ -94,6 +94,24 @@ async function initSupabaseFromServer() {
   }
 }
 
+async function ensureSupabaseReady() {
+  if (sb) return true;
+  try {
+    try { console.log('[supabase] ensure ready...'); } catch {}
+    await initSupabaseFromServer();
+    if (!sb?.auth) {
+      showAlert('authAlert', 'Supabase Auth não carregou (verifique o script @supabase/supabase-js e /api/config).');
+      return false;
+    }
+    try { console.log('[supabase] ready'); } catch {}
+    return true;
+  } catch (e) {
+    try { console.error('[supabase] ensure ready error', e); } catch {}
+    showAlert('authAlert', `Config Supabase: ${e.message}`);
+    return false;
+  }
+}
+
 window.addEventListener('error', (ev) => {
   try {
     const msg = ev?.error?.message || ev?.message || 'Erro inesperado';
@@ -3116,24 +3134,6 @@ async function boot() {
     renderDataGenTable(__genRows || []);
   } catch {
     // ignore
-  }
-
-  async function ensureSupabaseReady() {
-    if (sb) return true;
-    try {
-      try { console.log('[supabase] ensure ready...'); } catch {}
-      await initSupabaseFromServer();
-      if (!sb?.auth) {
-        showAlert('authAlert', 'Supabase Auth não carregou (verifique o script @supabase/supabase-js e /api/config).');
-        return false;
-      }
-      try { console.log('[supabase] ready'); } catch {}
-      return true;
-    } catch (e) {
-      try { console.error('[supabase] ensure ready error', e); } catch {}
-      showAlert('authAlert', `Config Supabase: ${e.message}`);
-      return false;
-    }
   }
 
   const today = todayISO();
