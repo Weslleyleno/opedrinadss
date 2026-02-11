@@ -380,7 +380,7 @@ body.theme-black .modal {
   left: 0;
   right: 0;
   height: 56px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -401,6 +401,7 @@ body.theme-black .modal {
 .sidebar-overlay {
   position: fixed;
   inset: 0;
+  display: none;
   background: rgba(0,0,0,0.55);
   backdrop-filter: blur(8px);
   z-index: 10000;
@@ -429,6 +430,17 @@ body.theme-black .modal {
   body.sidebar-open .sidebar-overlay {
     display: block !important;
   }
+}
+
+@media (max-width: 720px) {
+  .content { padding: 12px; }
+  .tabs { flex-wrap: wrap; }
+  .tab { flex: 1; text-align: center; }
+  .row { flex-wrap: wrap; align-items: stretch; }
+  .row.space { gap: 10px; }
+  .btn { width: 100%; }
+  .table { overflow-x: auto; }
+  .table .table-row { min-width: 520px; }
 }
 
 .brand-title {
