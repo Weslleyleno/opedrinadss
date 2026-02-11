@@ -403,7 +403,7 @@ create table if not exists public.operations (
   result numeric(12,2) not null default 0,
   note text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
   -- allow multiple operations per day
 );
 
