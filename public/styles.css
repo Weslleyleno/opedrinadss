@@ -457,6 +457,19 @@ body.theme-black .logo-ring::before {
   background: rgba(255,255,255,0.06);
 }
 
+/* Windows/Browser native dropdown: precisa estilizar as opções para não ficar branco ilegível */
+.field .select option,
+.field .select optgroup {
+  background: #0b1220;
+  color: rgba(255,255,255,0.96);
+}
+
+body.theme-black .field .select option,
+body.theme-black .field .select optgroup {
+  background: #000;
+  color: #fff;
+}
+
 .field .select:focus {
   border-color: rgba(96,165,250,0.60);
   box-shadow: 0 0 0 3px rgba(96,165,250,0.16);
