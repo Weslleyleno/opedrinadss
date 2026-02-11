@@ -54,6 +54,46 @@ var __authedUserId = '';
 
 const el = (id) => document.getElementById(id);
 
+async function initSupabaseFromServer() {
+  if (sb) return sb;
+  if (__supabaseInitPromise) return __supabaseInitPromise;
+
+  __supabaseInitPromise = (async () => {
+    const res = await fetch('/api/config', { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || 'Falha ao carregar /api/config');
+    }
+
+    const supabaseUrl = String(data?.supabaseUrl || '').trim();
+    const supabaseAnonKey = String(data?.supabaseAnonKey || '').trim();
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Config inválida do Supabase');
+    }
+
+    const factory = window?.supabase?.createClient;
+    if (typeof factory !== 'function') {
+      throw new Error('Supabase JS não carregou (window.supabase.createClient)');
+    }
+
+    sb = factory(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+
+    return sb;
+  })();
+
+  try {
+    return await __supabaseInitPromise;
+  } finally {
+    __supabaseInitPromise = null;
+  }
+}
+
 window.addEventListener('error', (ev) => {
   try {
     const msg = ev?.error?.message || ev?.message || 'Erro inesperado';
