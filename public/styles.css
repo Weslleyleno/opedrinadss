@@ -438,9 +438,56 @@ body.theme-black .modal {
   .tab { flex: 1; text-align: center; }
   .row { flex-wrap: wrap; align-items: stretch; }
   .row.space { gap: 10px; }
-  .btn { width: 100%; }
   .table { overflow-x: auto; }
   .table .table-row { min-width: 520px; }
+
+  .field .btn,
+  .row > .btn {
+    width: 100%;
+  }
+
+  #opsTable .btn,
+  #creativesList .btn,
+  #dataGenTable .btn {
+    width: auto;
+  }
+
+  /* Operações */
+  .ops-hero-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .ops-hero-total {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #opsAdminUser,
+  #opsYear,
+  #opsMonth,
+  #opsDay {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Gastos */
+  #expSearch,
+  #expPeriod,
+  #expFrom,
+  #expTo,
+  #expCategory,
+  #expOrder {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #tab-expenses .kpi,
+  .ops-kpi {
+    text-align: left;
+  }
+
+  .table { padding: 0 12px 12px 12px; }
 }
 
 .brand-title {
