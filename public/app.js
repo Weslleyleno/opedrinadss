@@ -1481,18 +1481,35 @@ function renderChart(rows) {
 }
 
 async function refreshOpsTable() {
-  syncHiddenOpsRangeInputs();
-  const from = el('filterFrom')?.value || null;
-  const to = el('filterTo')?.value || null;
-  const rows = await loadOperations(from, to);
-  renderOpsTable(rows);
+  try {
+    hideAlert('opAlert');
+    syncHiddenOpsRangeInputs();
+    const from = el('filterFrom')?.value || null;
+    const to = el('filterTo')?.value || null;
+    const rows = await loadOperations(from, to);
+    renderOpsTable(rows);
+    return rows;
+  } catch (e) {
+    showAlert('opAlert', e?.message || 'Erro ao carregar operações.');
+    try { console.error('[ops] refreshOpsTable error', e); } catch {}
+    try { renderOpsTable([]); } catch {}
+    return [];
+  }
 }
 
 async function refreshChart() {
-  const from = el('chartFrom')?.value || null;
-  const to = el('chartTo')?.value || null;
-  const rows = await loadOperations(from, to);
-  renderChart(rows);
+  try {
+    const from = el('chartFrom')?.value || null;
+    const to = el('chartTo')?.value || null;
+    const rows = await loadOperations(from, to);
+    renderChart(rows);
+    return rows;
+  } catch (e) {
+    showAlert('opAlert', e?.message || 'Erro ao carregar gráfico.');
+    try { console.error('[charts] refreshChart error', e); } catch {}
+    try { renderChart([]); } catch {}
+    return [];
+  }
 }
 
 async function saveOperation() {
@@ -2157,7 +2174,7 @@ async function onAuthed(session, usernameForUpsert) {
       syncHiddenOpsRangeInputs();
 
       setTimeout(() => {
-        refreshOpsTable().catch(() => {});
+        refreshOpsTable();
       }, 0);
 
       populateRankingFilters();
