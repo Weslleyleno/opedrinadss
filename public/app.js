@@ -2922,11 +2922,6 @@ async function boot() {
     showPage('ops');
   });
 
-  el('grantAdminBtn').addEventListener('click', async () => {
-    if (!await ensureSupabaseReady()) return;
-    await grantAdmin();
-  });
-
   const saveMonthlyRewardBtn = el('saveMonthlyRewardBtn');
   if (saveMonthlyRewardBtn) {
     saveMonthlyRewardBtn.addEventListener('click', async () => {
