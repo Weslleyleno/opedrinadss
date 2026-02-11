@@ -3042,6 +3042,13 @@ async function boot() {
     }
   }
 
+  if (loginBtn) {
+    loginBtn.addEventListener('click', async () => {
+      try { console.log('[auth] click login'); } catch {}
+      await handleLogin('');
+    });
+  }
+
   const adminUserSaveBtn = el('adminUserSaveBtn');
   if (adminUserSaveBtn) {
     adminUserSaveBtn.addEventListener('click', async () => {
