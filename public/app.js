@@ -811,6 +811,8 @@ async function copyToClipboard(text) {
     toast('error', 'Erro', 'Não foi possível copiar.');
   }
 }
+
+function renderCreatives(rows) {
   const root = el('creativesList');
   if (!root) return;
 
