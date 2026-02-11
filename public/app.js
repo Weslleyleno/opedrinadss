@@ -199,7 +199,16 @@ async function loadResources() {
     .from('resources')
     .select('id, title, url, description, updated_at')
     .order('updated_at', { ascending: false });
-  if (error) throw error;
+
+  if (error) {
+    const status = Number(error.status || 0);
+    const msg = String(error.message || '');
+    // Se a tabela não existe (404), não quebra a aplicação.
+    if (status === 404 || /not found/i.test(msg)) {
+      return [];
+    }
+    throw error;
+  }
   return data || [];
 }
 
