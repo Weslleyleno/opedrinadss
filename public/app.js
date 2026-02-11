@@ -1069,7 +1069,7 @@ function setAuthedUI(isAuthed) {
 function setUserLabel() {
   const label = el('userLabel');
   if (!label) return;
-  label.textContent = currentProfile?.username || '';
+  label.textContent = currentProfile?.username || currentSession?.user?.email || '';
 }
 
 function setUserAvatar() {
@@ -1920,7 +1920,14 @@ async function checkAdmin() {
 
 async function ensureProfile(session, usernameForUpsert) {
   if (!session?.user?.id) throw new Error('Sessão inválida.');
-  if (!await ensureSupabaseReady()) throw new Error('Supabase não inicializou.');
+  if (!sb) {
+    try {
+      await initSupabaseFromServer();
+    } catch (e) {
+      throw new Error(e?.message || 'Supabase não inicializou.');
+    }
+  }
+  if (!sb?.from) throw new Error('Supabase não inicializou.');
 
   const userId = session.user.id;
   const email = String(session.user.email || '').trim();
