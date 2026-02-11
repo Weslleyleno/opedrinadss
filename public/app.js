@@ -1779,6 +1779,20 @@ function showPage(page) {
   el('tab-expenses').style.display = page === 'expenses' ? 'block' : 'none';
   el('tab-profile').style.display = page === 'profile' ? 'block' : 'none';
   el('tab-admin').style.display = page === 'admin' ? 'block' : 'none';
+
+  const t = el('mobileTopbarTitle');
+  if (t) {
+    const map = {
+      ops: 'Operações',
+      charts: 'Gráficos',
+      ranking: 'Ranking',
+      central: 'Central',
+      expenses: 'Gastos',
+      profile: 'Perfil',
+      admin: 'Admin'
+    };
+    t.textContent = map[page] || 'OPEDRIN ADSS';
+  }
 }
 
 function getCurrentPage() {
@@ -2819,6 +2833,14 @@ function setupTabs() {
 
       const tab = btn.getAttribute('data-page');
 
+      try {
+        document.body.classList.remove('sidebar-open');
+        const overlay = el('sidebarOverlay');
+        if (overlay) overlay.style.display = 'none';
+      } catch {
+        // ignore
+      }
+
       if (tab === 'admin' && !Boolean(currentProfile?.is_admin)) {
         const fallback = document.querySelector('.nav-item[data-page="ops"]');
         if (fallback) fallback.click();
@@ -2987,6 +3009,26 @@ async function boot() {
   }
   try { console.log('[boot] start'); } catch {}
   const loginBtn = el('loginBtn');
+
+  const mobileMenuBtn = el('mobileMenuBtn');
+  const sidebarOverlay = el('sidebarOverlay');
+  const setSidebarOpen = (open) => {
+    document.body.classList.toggle('sidebar-open', Boolean(open));
+    if (sidebarOverlay) sidebarOverlay.style.display = open ? 'block' : 'none';
+  };
+
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+      const open = document.body.classList.contains('sidebar-open');
+      setSidebarOpen(!open);
+    });
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      setSidebarOpen(false);
+    });
+  }
 
   const applyExpensesFilterBtn = el('applyExpensesFilterBtn');
   if (applyExpensesFilterBtn) {
