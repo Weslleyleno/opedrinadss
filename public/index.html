@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OPEDRIN ADSS</title>
-  <link rel="stylesheet" href="/styles.css?v=20260211_3" />
+  <link rel="stylesheet" href="/styles.css?v=20260211_5" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
@@ -610,34 +610,6 @@
 
             <div class="card" style="margin: 0 16px 16px 16px;">
               <div class="card-header">
-                <h3>Categorias</h3>
-                <p>Crie e organize suas categorias (somente você vê)</p>
-              </div>
-              <div style="padding: 0 16px 14px 16px;">
-                <input id="expCatEditingId" type="hidden" value="" />
-                <div class="grid2" style="margin-bottom: 10px;">
-                  <div class="field" style="padding:0;">
-                    <label>Nome</label>
-                    <input id="expCatName" type="text" placeholder="Ex: Mercado" />
-                  </div>
-                  <div class="field" style="padding:0;">
-                    <label>Cor</label>
-                    <input id="expCatColor" type="color" value="#60a5fa" style="height: 42px;" />
-                  </div>
-                </div>
-                <div class="row space" style="margin-bottom: 12px;">
-                  <div class="row" style="gap: 10px;">
-                    <button class="btn btn-secondary" id="expCatSaveBtn" type="button">Salvar categoria</button>
-                    <button class="btn btn-ghost" id="expCatClearBtn" type="button">Limpar</button>
-                  </div>
-                  <div class="muted" id="expCatHint"></div>
-                </div>
-                <div class="table" id="expCategoriesList" style="margin-bottom: 14px;"></div>
-              </div>
-            </div>
-
-            <div class="card" style="margin: 0 16px 16px 16px;">
-              <div class="card-header">
                 <h3>Gastos</h3>
               </div>
               <div class="table" id="expensesTable"></div>
@@ -766,8 +738,8 @@
     </main>
   </div>
 
-  <script src="/charts.js?v=20260211_3"></script>
-  <script src="/app.js?v=20260211_3"></script>
+  <script src="/charts.js?v=20260211_4"></script>
+  <script src="/app.js?v=20260211_4"></script>
 
   <div class="modal-backdrop" id="uiModal" style="display:none;">
     <div class="modal">
@@ -784,3 +756,4 @@
   <div class="toast-stack" id="uiToasts"></div>
 </body>
 </html>
+55

@@ -971,6 +971,37 @@ async function refreshExpenseCategories() {
   return __lastExpenseCategories;
 }
 
+async function ensureDefaultExpenseCategories() {
+  if (!currentSession?.user?.id) return;
+  if (Array.isArray(__lastExpenseCategories) && __lastExpenseCategories.length) return;
+
+  const defaults = [
+    { name: 'Alimentação', color: '#60a5fa' },
+    { name: 'Mercado', color: '#34d399' },
+    { name: 'Transporte', color: '#a78bfa' },
+    { name: 'Casa', color: '#fbbf24' },
+    { name: 'Saúde', color: '#fb7185' },
+    { name: 'Lazer', color: '#22c55e' },
+    { name: 'Outros', color: '#94a3b8' }
+  ];
+
+  try {
+    const payload = defaults.map((d, idx) => ({
+      user_id: currentSession.user.id,
+      name: d.name,
+      color: d.color,
+      sort_order: (idx + 1) * 10
+    }));
+
+    const { error } = await sb
+      .from('personal_expense_categories')
+      .insert(payload);
+    if (error) throw error;
+  } catch {
+    // ignore
+  }
+}
+
 async function saveExpenseCategory() {
   setHint('expCatHint', '');
   hideAlert('expensesAlert');
@@ -1274,6 +1305,9 @@ function setExpensesRangeInputsEnabled() {
 async function initExpensesTab() {
   if (!await ensureSupabaseReady()) return;
   try {
+    await refreshExpenseCategories();
+
+    await ensureDefaultExpenseCategories();
     await refreshExpenseCategories();
 
     // defaults
@@ -3011,60 +3045,6 @@ async function boot() {
           return;
         }
         toast('success', 'Removido', 'Gasto removido.');
-        await refreshExpenses();
-      }
-    });
-  }
-
-  const expCatSaveBtn = el('expCatSaveBtn');
-  if (expCatSaveBtn) {
-    expCatSaveBtn.addEventListener('click', async () => {
-      if (!await ensureSupabaseReady()) return;
-      await saveExpenseCategory();
-    });
-  }
-
-  const expCatClearBtn = el('expCatClearBtn');
-  if (expCatClearBtn) {
-    expCatClearBtn.addEventListener('click', () => {
-      clearExpenseCategoryForm();
-    });
-  }
-
-  const expCategoriesList = el('expCategoriesList');
-  if (expCategoriesList) {
-    expCategoriesList.addEventListener('click', async (ev) => {
-      const btn = ev.target?.closest?.('[data-exp-cat-action]');
-      if (!btn) return;
-      if (!await ensureSupabaseReady()) return;
-
-      const action = btn.getAttribute('data-exp-cat-action');
-      const idStr = btn.getAttribute('data-exp-cat-id');
-      const id = idStr ? Number(idStr) : 0;
-      if (!action || !id) return;
-
-      const row = (Array.isArray(__lastExpenseCategories) ? __lastExpenseCategories : []).find((x) => Number(x?.id) === id) || null;
-      if (!row) return;
-
-      if (action === 'edit') {
-        if (el('expCatEditingId')) el('expCatEditingId').value = String(row.id);
-        if (el('expCatName')) el('expCatName').value = String(row.name || '');
-        if (el('expCatColor')) el('expCatColor').value = String(row.color || '#60a5fa');
-        setHint('expCatHint', 'Editando...');
-        return;
-      }
-
-      if (action === 'del') {
-        const ok = await confirmModal('Confirmar Remoção', 'Excluir esta categoria?');
-        if (!ok) return;
-        const { error } = await sb.from('personal_expense_categories').delete().eq('id', row.id);
-        if (error) {
-          showAlert('expensesAlert', error.message);
-          return;
-        }
-        toast('success', 'Removido', 'Categoria removida.');
-        clearExpenseCategoryForm();
-        await refreshExpenseCategories();
         await refreshExpenses();
       }
     });
