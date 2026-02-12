@@ -660,7 +660,10 @@ body.theme-black .card-header h2 {
 }
 
 .card-header p {
-  margin-top: 6px;
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--muted);
 }
 
 .auth-logo {
@@ -684,10 +687,6 @@ body.theme-black .card-header h2 {
     filter: drop-shadow(0 28px 85px rgba(254,44,85,0.22));
   }
 }
-
-.card-header h2 { margin: 0; font-size: 16px; }
-
-.card-header p { margin: 6px 0 0 0; color: var(--muted); font-size: 12px; }
 
 .kpi {
   min-width: 160px;
