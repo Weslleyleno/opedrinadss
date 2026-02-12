@@ -3025,8 +3025,9 @@ async function onAuthed(session, usernameForUpsert) {
 
   // Mostra o dashboard imediatamente para não parecer que "não logou"
   setAuthedUI(true);
-  setActiveNav('ops');
-  showPage('ops');
+  setActiveNav('opscenter');
+  showPage('opscenter');
+  try { initOpsCenter(); } catch {}
 
   try {
     await startPresence();
@@ -3047,8 +3048,9 @@ async function onAuthed(session, usernameForUpsert) {
       await checkAdmin();
 
       setOpsFormOpen(false);
-      setActiveNav('ops');
-      showPage('ops');
+      setActiveNav('opscenter');
+      showPage('opscenter');
+      try { initOpsCenter(); } catch {}
 
       setChartModeUI(currentProfile?.chart_mode || 'combo');
       const hint = el('chartModeHint');
@@ -3688,8 +3690,9 @@ async function boot() {
     currentProfile = null;
     setAuthedUI(false);
     updateGreeting();
-    setActiveNav('ops');
-    showPage('ops');
+    setActiveNav('opscenter');
+    showPage('opscenter');
+    try { initOpsCenter(); } catch {}
   });
 
   const saveMonthlyRewardBtn = el('saveMonthlyRewardBtn');
@@ -4174,14 +4177,15 @@ async function boot() {
       return;
     }
 
-    sb.auth.onAuthStateChange(async (_event, session) => {
+    sb.auth.onAuthStateChange(async (event, session) => {
       if (!session) {
         currentSession = null;
         currentProfile = null;
         setAuthedUI(false);
         updateGreeting();
-        setActiveNav('ops');
-        showPage('ops');
+        setActiveNav('opscenter');
+        showPage('opscenter');
+        try { initOpsCenter(); } catch {}
         return;
       }
 
