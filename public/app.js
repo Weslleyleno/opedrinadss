@@ -904,7 +904,7 @@ function renderCreatives(rows) {
 
   const header = `
     <div class="table-row header">
-      <div>Token</div>
+      <div>Criativo</div>
       <div>Status</div>
       <div>Descrição</div>
       <div>Ações</div>
@@ -3773,7 +3773,7 @@ async function boot() {
       const editingId = (el('creativeEditingId')?.value || '').trim();
 
       if (!token) {
-        setHint('creativeHint', 'Digite o token.');
+        setHint('creativeHint', 'Digite o criativo.');
         return;
       }
 
