@@ -330,6 +330,7 @@ body.theme-black .modal {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .user-avatar {
@@ -1023,12 +1024,23 @@ body.theme-black .field .select optgroup {
   gap: 8px;
   color: rgba(255,255,255,0.82);
   font-weight: 700;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.greeting #greetingText {
+  white-space: nowrap;
 }
 
 .greeting-name {
   margin-left: 2px;
   font-weight: 900;
   color: rgba(255,255,255,0.92);
+  display: inline-block;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .greeting #waveHand {
