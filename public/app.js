@@ -1909,6 +1909,27 @@ function initOpsCenter() {
   chartsSection.style.display = 'none';
   rankingSection.style.display = 'none';
 
+  const scheduleChartRefresh = () => {
+    try {
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              try { refreshChart(); } catch {}
+            }, 30);
+          });
+        });
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    setTimeout(() => {
+      try { refreshChart(); } catch {}
+    }, 30);
+  };
+
   const show = async (key) => {
     pOps.style.display = key === 'ops' ? 'block' : 'none';
     pCharts.style.display = key === 'charts' ? 'block' : 'none';
@@ -1923,7 +1944,7 @@ function initOpsCenter() {
     }
 
     try {
-      if (key === 'charts' && typeof refreshChart === 'function') await refreshChart();
+      if (key === 'charts' && typeof refreshChart === 'function') scheduleChartRefresh();
       if (key === 'ranking' && typeof loadRanking === 'function') await loadRanking();
     } catch {
       // ignore
