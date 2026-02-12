@@ -266,6 +266,74 @@ function confirmModal(title, text, opts) {
   return __modalPromise;
 }
 
+function promptModal(title, text, opts) {
+  if (__modalPromise) return __modalPromise;
+  const backdrop = el('uiModal');
+  const titleEl = el('uiModalTitle');
+  const textEl = el('uiModalText');
+  const iconEl = el('uiModalIcon');
+  const btnCancel = el('uiModalCancel');
+  const btnOk = el('uiModalConfirm');
+  if (!backdrop || !btnCancel || !btnOk || !titleEl || !textEl || !iconEl) {
+    const v = window.prompt(text || title || '');
+    return Promise.resolve(v == null ? null : String(v));
+  }
+
+  const o = opts && typeof opts === 'object' ? opts : {};
+  const okLabel = String(o.okLabel || 'Salvar');
+  const cancelLabel = String(o.cancelLabel || 'Cancelar');
+  const icon = String(o.icon || 'fa-bullseye');
+  const iconBg = String(o.iconBg || 'rgba(37,244,238,0.14)');
+  const iconBorder = String(o.iconBorder || 'rgba(37,244,238,0.22)');
+  const inputType = String(o.inputType || 'text');
+  const placeholder = String(o.placeholder || '');
+  const value = o.value == null ? '' : String(o.value);
+
+  titleEl.textContent = String(title || '');
+  textEl.innerHTML = `
+    <div style="margin-bottom: 10px;">${escapeHtml(String(text || ''))}</div>
+    <input id="uiModalInput" type="${escapeHtml(inputType)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(value)}" style="width:100%;" />
+  `;
+  iconEl.innerHTML = `<i class="fa-solid ${escapeHtml(icon)}" aria-hidden="true"></i>`;
+  iconEl.style.background = iconBg;
+  iconEl.style.borderColor = iconBorder;
+  btnOk.textContent = okLabel;
+  btnCancel.textContent = cancelLabel;
+
+  backdrop.style.display = 'grid';
+
+  const cleanup = () => {
+    backdrop.style.display = 'none';
+    btnCancel.onclick = null;
+    btnOk.onclick = null;
+    backdrop.onclick = null;
+    __modalPromise = null;
+    __modalResolve = null;
+  };
+
+  __modalPromise = new Promise((resolve) => {
+    __modalResolve = resolve;
+    const readValue = () => {
+      const inp = el('uiModalInput');
+      return inp ? String(inp.value || '') : '';
+    };
+    const finish = (val) => {
+      cleanup();
+      resolve(val);
+    };
+    btnCancel.onclick = () => finish(null);
+    btnOk.onclick = () => finish(readValue());
+    backdrop.onclick = (ev) => {
+      if (ev?.target === backdrop) finish(null);
+    };
+    setTimeout(() => {
+      try { el('uiModalInput')?.focus(); } catch {}
+    }, 0);
+  });
+
+  return __modalPromise;
+}
+
 function setHint(targetId, message) {
   const box = el(targetId);
   if (!box) return;
