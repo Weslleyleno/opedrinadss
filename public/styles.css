@@ -845,6 +845,41 @@ body.theme-black .field .select optgroup {
   border-color: rgba(96,165,250,0.38);
 }
 
+/* Centro de Operações: subnav igual Central */
+.ops-center-subnav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.ops-center-subnav .btn {
+  flex: 1 1 0;
+  min-width: 220px;
+  height: 56px;
+  justify-content: center;
+  text-align: center;
+  border-radius: 14px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.ops-center-subnav .btn.active {
+  filter: brightness(1.16);
+  box-shadow:
+    0 18px 40px rgba(0,0,0,0.35),
+    0 0 0 3px rgba(96,165,250,0.14);
+  background: linear-gradient(90deg, rgba(96,165,250,0.22) 0%, rgba(167,139,250,0.18) 60%, rgba(255,255,255,0.04) 100%);
+  border-color: rgba(96,165,250,0.38);
+}
+
+@media (max-width: 860px) {
+  .ops-center-subnav .btn {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 @media (max-width: 860px) {
   .central-subnav .btn {
     min-width: 0;

@@ -1772,6 +1772,7 @@ function setActiveNav(page) {
 }
 
 function showPage(page) {
+  if (el('tab-ops-center')) el('tab-ops-center').style.display = page === 'opscenter' ? 'block' : 'none';
   el('tab-ops').style.display = page === 'ops' ? 'block' : 'none';
   el('tab-charts').style.display = page === 'charts' ? 'block' : 'none';
   el('tab-ranking').style.display = page === 'ranking' ? 'block' : 'none';
@@ -1783,6 +1784,7 @@ function showPage(page) {
   const t = el('mobileTopbarTitle');
   if (t) {
     const map = {
+      opscenter: 'Centro de Operações',
       ops: 'Operações',
       charts: 'Gráficos',
       ranking: 'Ranking',
@@ -1796,6 +1798,7 @@ function showPage(page) {
 }
 
 function getCurrentPage() {
+  if (el('tab-ops-center')?.style.display !== 'none') return 'opscenter';
   if (el('tab-ops')?.style.display !== 'none') return 'ops';
   if (el('tab-charts')?.style.display !== 'none') return 'charts';
   if (el('tab-ranking')?.style.display !== 'none') return 'ranking';
@@ -1803,7 +1806,77 @@ function getCurrentPage() {
   if (el('tab-expenses')?.style.display !== 'none') return 'expenses';
   if (el('tab-profile')?.style.display !== 'none') return 'profile';
   if (el('tab-admin')?.style.display !== 'none') return 'admin';
-  return 'ops';
+  return 'opscenter';
+}
+
+function initOpsCenter() {
+  const container = el('opsCenterPanels');
+  if (!container) return;
+
+  const opsSection = el('tab-ops');
+  const chartsSection = el('tab-charts');
+  const rankingSection = el('tab-ranking');
+  if (!opsSection || !chartsSection || !rankingSection) return;
+
+  if (opsSection.__movedToOpsCenter) return;
+  opsSection.__movedToOpsCenter = true;
+
+  const makePanel = (id) => {
+    const d = document.createElement('div');
+    d.className = 'ops-center-panel';
+    d.id = id;
+    return d;
+  };
+
+  const pOps = makePanel('ops-center-ops');
+  const pCharts = makePanel('ops-center-charts');
+  const pRanking = makePanel('ops-center-ranking');
+
+  while (opsSection.firstChild) pOps.appendChild(opsSection.firstChild);
+  while (chartsSection.firstChild) pCharts.appendChild(chartsSection.firstChild);
+  while (rankingSection.firstChild) pRanking.appendChild(rankingSection.firstChild);
+
+  container.appendChild(pOps);
+  container.appendChild(pCharts);
+  container.appendChild(pRanking);
+
+  opsSection.style.display = 'none';
+  chartsSection.style.display = 'none';
+  rankingSection.style.display = 'none';
+
+  const show = async (key) => {
+    pOps.style.display = key === 'ops' ? 'block' : 'none';
+    pCharts.style.display = key === 'charts' ? 'block' : 'none';
+    pRanking.style.display = key === 'ranking' ? 'block' : 'none';
+
+    try {
+      document.querySelectorAll('#opsCenterSubnav [data-ops-center]').forEach((b) => {
+        b.classList.toggle('active', b.getAttribute('data-ops-center') === key);
+      });
+    } catch {
+      // ignore
+    }
+
+    try {
+      if (key === 'charts' && typeof refreshChart === 'function') await refreshChart();
+      if (key === 'ranking' && typeof loadRanking === 'function') await loadRanking();
+    } catch {
+      // ignore
+    }
+  };
+
+  try {
+    document.querySelectorAll('#opsCenterSubnav [data-ops-center]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-ops-center') || 'ops';
+        await show(key);
+      });
+    });
+  } catch {
+    // ignore
+  }
+
+  void show('ops');
 }
 
 function setCentralTab(tab) {
@@ -2842,12 +2915,16 @@ function setupTabs() {
       }
 
       if (tab === 'admin' && !Boolean(currentProfile?.is_admin)) {
-        const fallback = document.querySelector('.nav-item[data-page="ops"]');
+        const fallback = document.querySelector('.nav-item[data-page="opscenter"]');
         if (fallback) fallback.click();
         return;
       }
 
       showPage(tab);
+
+      if (tab === 'opscenter') {
+        try { initOpsCenter(); } catch {}
+      }
 
       if (tab === 'ops') {
         if (!__opsFiltersTouched) {
@@ -3037,6 +3114,8 @@ async function boot() {
       await refreshExpenses();
     });
   }
+
+  try { initOpsCenter(); } catch {}
 
   const expPeriod = el('expPeriod');
   if (expPeriod) {

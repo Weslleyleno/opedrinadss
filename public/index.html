@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OPEDRIN ADSS</title>
-  <link rel="stylesheet" href="/styles.css?v=20260211_13" />
+  <link rel="stylesheet" href="/styles.css?v=20260211_16" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
@@ -75,25 +75,11 @@
             </div>
 
             <nav class="side-nav">
-              <button class="nav-item active" data-page="ops" type="button">
+              <button class="nav-item active" data-page="opscenter" type="button">
                 <i class="fa-solid fa-coins"></i>
                 <span class="nav-item-text">
-                  <span class="nav-item-title">Operações</span>
-                  <span class="nav-item-desc">Métricas • Controle Diário • Ranking</span>
-                </span>
-              </button>
-              <button class="nav-item" data-page="charts" type="button">
-                <i class="fa-solid fa-chart-column"></i>
-                <span class="nav-item-text">
-                  <span class="nav-item-title">Gráficos</span>
-                  <span class="nav-item-desc">Lucro • Gastos • Resultado</span>
-                </span>
-              </button>
-              <button class="nav-item" data-page="ranking" type="button">
-                <i class="fa-solid fa-trophy"></i>
-                <span class="nav-item-text">
-                  <span class="nav-item-title">Ranking</span>
-                  <span class="nav-item-desc">Melhores resultados do mês</span>
+                  <span class="nav-item-title">Centro de Operações</span>
+                  <span class="nav-item-desc">Operações • Gráficos • Ranking</span>
                 </span>
               </button>
               <button class="nav-item" data-page="central" type="button">
@@ -129,7 +115,24 @@
 
           <section class="main">
 
-        <section class="tabpanel" id="tab-ops">
+        <section class="tabpanel" id="tab-ops-center">
+          <div class="card">
+            <div class="card-header">
+              <h2>Centro de Operações</h2>
+              <p>Painel completo: Operações • Gráficos • Ranking</p>
+            </div>
+
+            <div class="ops-center-subnav" id="opsCenterSubnav" style="padding: 0 16px 12px 16px;">
+              <button class="btn btn-ghost active" type="button" data-ops-center="ops">Operações</button>
+              <button class="btn btn-ghost" type="button" data-ops-center="charts">Gráficos</button>
+              <button class="btn btn-ghost" type="button" data-ops-center="ranking">Ranking</button>
+            </div>
+
+            <div class="ops-center-panels" id="opsCenterPanels" style="padding: 0 16px 16px 16px;"></div>
+          </div>
+        </section>
+
+        <section class="tabpanel" id="tab-ops" style="display:none;">
           <div class="ops-hero">
             <div>
               <div class="ops-hero-title">Controle Diário</div>
@@ -786,8 +789,8 @@
     </main>
   </div>
 
-  <script src="/charts.js?v=20260211_13"></script>
-  <script src="/app.js?v=20260211_13"></script>
+  <script src="/charts.js?v=20260211_16"></script>
+  <script src="/app.js?v=20260211_16"></script>
 
   <div class="modal-backdrop" id="uiModal" style="display:none;">
     <div class="modal">
@@ -804,4 +807,3 @@
   <div class="toast-stack" id="uiToasts"></div>
 </body>
 </html>
-55
