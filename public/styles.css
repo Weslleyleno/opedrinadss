@@ -212,6 +212,28 @@ body.theme-black .logo-ring::before {
   padding-top: 8px;
 }
 
+/* Operações: organizar form dentro do popup */
+#opsModal .card { overflow: visible; }
+
+#opsModal label {
+  white-space: normal;
+}
+
+#opsModal .grid3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#opsModal .grid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  #opsModal .grid2,
+  #opsModal .grid3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .modal {
   width: min(520px, 96vw);
   border-radius: 22px;
