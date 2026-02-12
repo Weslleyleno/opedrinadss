@@ -2241,6 +2241,7 @@ function renderOpsTable(rows) {
       if (action === 'edit') {
         const row = (rows || []).find((x) => String(x.id) === String(id));
         if (!row) return;
+        try { initOpsFormModal(); } catch {}
         setOpsFormOpen(true);
         el('editingId').value = row.id;
         el('opDate').value = row.op_date;
@@ -2249,8 +2250,7 @@ function renderOpsTable(rows) {
         el('opNote').value = row.note || '';
         calcResult();
         hideAlert('opAlert');
-        const card = el('opsFormCard');
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        try { el('opProfit')?.focus(); } catch {}
       }
 
       if (action === 'delete') {
@@ -2419,7 +2419,10 @@ function clearOperationForm() {
 function setOpsFormOpen(open) {
   const modal = el('opsModal');
   if (modal) {
+    try { initOpsFormModal(); } catch {}
     modal.style.display = open ? 'grid' : 'none';
+    const card = el('opsFormCard');
+    if (card) card.style.display = open ? 'block' : 'none';
     return;
   }
 
@@ -3449,11 +3452,19 @@ async function boot() {
   const opsAddBtn = el('opsAddBtn');
   if (opsAddBtn) {
     opsAddBtn.addEventListener('click', () => {
+      try { initOpsFormModal(); } catch {}
       setOpsFormOpen(true);
-      const card = document.querySelector('#tab-ops .card');
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
       const dateEl = el('opDate');
-      if (dateEl) dateEl.focus();
+      if (dateEl && !dateEl.value) {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        dateEl.value = `${yyyy}-${mm}-${dd}`;
+      }
+
+      try { el('opProfit')?.focus(); } catch {}
     });
   }
 
