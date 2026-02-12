@@ -894,6 +894,19 @@ body.theme-black .field .select optgroup {
   letter-spacing: 0.2px;
 }
 
+.central-subnav .btn,
+.ops-center-subnav .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.central-subnav .btn i,
+.ops-center-subnav .btn i {
+  opacity: 0.92;
+}
+
 .central-subnav .btn.active {
   filter: brightness(1.16);
   box-shadow:
