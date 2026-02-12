@@ -565,10 +565,14 @@ body.theme-black .modal {
 }
 
 body.theme-black .ops-hero-title {
-  background: linear-gradient(90deg, rgba(37,244,238,0.98) 0%, rgba(254,44,85,0.90) 55%, rgba(255,255,255,0.92) 100%);
+  background: linear-gradient(90deg, rgba(37,244,238,1) 0%, rgba(37,244,238,0.92) 35%, rgba(254,44,85,0.95) 72%, rgba(255,255,255,0.95) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  text-shadow:
+    0 10px 38px rgba(0,0,0,0.62),
+    0 0 28px rgba(37,244,238,0.12),
+    0 0 32px rgba(254,44,85,0.10);
 }
 
 .ops-hero-sub {
@@ -653,10 +657,21 @@ body.theme-black .ops-hero-title {
 }
 
 body.theme-black .card-header h2 {
-  background: linear-gradient(90deg, rgba(37,244,238,0.98) 0%, rgba(254,44,85,0.90) 55%, rgba(255,255,255,0.92) 100%);
+  background: linear-gradient(90deg, rgba(37,244,238,1) 0%, rgba(37,244,238,0.92) 35%, rgba(254,44,85,0.95) 72%, rgba(255,255,255,0.95) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  text-shadow:
+    0 10px 38px rgba(0,0,0,0.62),
+    0 0 28px rgba(37,244,238,0.12),
+    0 0 32px rgba(254,44,85,0.10);
+}
+
+body.theme-black .card-header p {
+  color: rgba(255,255,255,0.74);
+  text-shadow:
+    0 10px 26px rgba(0,0,0,0.55),
+    0 0 18px rgba(37,244,238,0.08);
 }
 
 .card-header p {
