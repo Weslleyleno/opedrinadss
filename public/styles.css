@@ -555,7 +555,20 @@ body.theme-black .modal {
 
 .ops-hero-title {
   font-weight: 900;
-  font-size: 18px;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+  background: linear-gradient(90deg, rgba(96,165,250,0.98) 0%, rgba(167,139,250,0.92) 55%, rgba(255,255,255,0.92) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 10px 38px rgba(0,0,0,0.55);
+}
+
+body.theme-black .ops-hero-title {
+  background: linear-gradient(90deg, rgba(37,244,238,0.98) 0%, rgba(254,44,85,0.90) 55%, rgba(255,255,255,0.92) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .ops-hero-sub {
@@ -626,6 +639,29 @@ body.theme-black .modal {
 }
 
 .card-header { padding: 16px 16px 10px 16px; }
+
+.card-header h2 {
+  font-size: 24px;
+  letter-spacing: 0.25px;
+  font-weight: 900;
+  margin: 0;
+  background: linear-gradient(90deg, rgba(96,165,250,0.98) 0%, rgba(167,139,250,0.92) 55%, rgba(255,255,255,0.92) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 10px 38px rgba(0,0,0,0.55);
+}
+
+body.theme-black .card-header h2 {
+  background: linear-gradient(90deg, rgba(37,244,238,0.98) 0%, rgba(254,44,85,0.90) 55%, rgba(255,255,255,0.92) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.card-header p {
+  margin-top: 6px;
+}
 
 .auth-logo {
   width: 100%;
