@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OPEDRIN ADSS</title>
-  <link rel="stylesheet" href="/styles.css?v=20260211_10" />
+  <link rel="stylesheet" href="/styles.css?v=20260211_11" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
@@ -75,13 +75,55 @@
             </div>
 
             <nav class="side-nav">
-              <button class="nav-item active" data-page="ops" type="button"><i class="fa-solid fa-coins"></i><span>Operações</span></button>
-              <button class="nav-item" data-page="charts" type="button"><i class="fa-solid fa-chart-column"></i><span>Gráficos</span></button>
-              <button class="nav-item" data-page="ranking" type="button"><i class="fa-solid fa-trophy"></i><span>Ranking</span></button>
-              <button class="nav-item" data-page="central" type="button"><i class="fa-solid fa-link"></i><span>Central</span></button>
-              <button class="nav-item" data-page="expenses" type="button"><i class="fa-solid fa-wallet"></i><span>Gastos</span></button>
-              <button class="nav-item" data-page="profile" type="button"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
-              <button class="nav-item" data-page="admin" type="button" id="adminTab" style="display:none;"><i class="fa-solid fa-shield"></i><span>Admin</span></button>
+              <button class="nav-item active" data-page="ops" type="button">
+                <i class="fa-solid fa-coins"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Operações</span>
+                  <span class="nav-item-desc">Métricas • Controle Diário • Ranking</span>
+                </span>
+              </button>
+              <button class="nav-item" data-page="charts" type="button">
+                <i class="fa-solid fa-chart-column"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Gráficos</span>
+                  <span class="nav-item-desc">Lucro • Gastos • Resultado</span>
+                </span>
+              </button>
+              <button class="nav-item" data-page="ranking" type="button">
+                <i class="fa-solid fa-trophy"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Ranking</span>
+                  <span class="nav-item-desc">Melhores resultados do mês</span>
+                </span>
+              </button>
+              <button class="nav-item" data-page="central" type="button">
+                <i class="fa-solid fa-link"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Central</span>
+                  <span class="nav-item-desc">Criativos • Proxy • Gerador de dados</span>
+                </span>
+              </button>
+              <button class="nav-item" data-page="expenses" type="button">
+                <i class="fa-solid fa-wallet"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Gastos</span>
+                  <span class="nav-item-desc">Categorias • Filtros • Exportação</span>
+                </span>
+              </button>
+              <button class="nav-item" data-page="profile" type="button">
+                <i class="fa-solid fa-user"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Perfil</span>
+                  <span class="nav-item-desc">Configurações • Avatar</span>
+                </span>
+              </button>
+              <button class="nav-item" data-page="admin" type="button" id="adminTab" style="display:none;">
+                <i class="fa-solid fa-shield"></i>
+                <span class="nav-item-text">
+                  <span class="nav-item-title">Admin</span>
+                  <span class="nav-item-desc">Gerenciar usuários</span>
+                </span>
+              </button>
             </nav>
           </aside>
 
@@ -702,8 +744,8 @@
                 <button class="btn btn-secondary" id="saveMonthlyRewardBtn" type="button">Salvar premiação</button>
               </div>
             </div>
-          </div>
-
+          </div>1
+1
           <div class="card" style="margin-top: 16px;">
             <div class="card-header">
               <h2>Usuários</h2>
