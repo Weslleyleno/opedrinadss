@@ -2417,9 +2417,43 @@ function clearOperationForm() {
 }
 
 function setOpsFormOpen(open) {
+  const modal = el('opsModal');
+  if (modal) {
+    modal.style.display = open ? 'grid' : 'none';
+    return;
+  }
+
   const card = el('opsFormCard');
   if (!card) return;
   card.style.display = open ? 'block' : 'none';
+}
+
+function initOpsFormModal() {
+  const modal = el('opsModal');
+  const body = el('opsModalBody');
+  const closeBtn = el('opsModalClose');
+  const card = el('opsFormCard');
+  if (!modal || !body || !card) return;
+
+  if (!card.__movedToOpsModal) {
+    card.__movedToOpsModal = true;
+    body.appendChild(card);
+  }
+
+  const close = () => setOpsFormOpen(false);
+  if (closeBtn && !closeBtn.__bound) {
+    closeBtn.__bound = true;
+    closeBtn.addEventListener('click', close);
+  }
+
+  if (!modal.__bound) {
+    modal.__bound = true;
+    modal.addEventListener('click', (ev) => {
+      if (ev?.target === modal) close();
+    });
+  }
+
+  setOpsFormOpen(false);
 }
 
 function updateOnlineUI() {
@@ -3227,6 +3261,8 @@ async function boot() {
       await refreshExpenses();
     });
   }
+
+  try { initOpsFormModal(); } catch {}
 
   try { initOpsCenter(); } catch {}
 

@@ -189,17 +189,39 @@ body.theme-black .logo-ring::before {
   z-index: 9999;
 }
 
+.ops-modal {
+  width: min(860px, 96vw);
+  position: relative;
+  padding: 18px;
+}
+
+.ops-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+}
+
+.ops-modal-body {
+  padding-top: 8px;
+}
+
 .modal {
   width: min(520px, 96vw);
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,0.10);
   background:
     radial-gradient(900px 520px at 18% 10%, rgba(96,165,250,0.16), transparent 62%),
-    radial-gradient(900px 520px at 82% 18%, rgba(167,139,250,0.14), transparent 62%),
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.28) 100%);
-  box-shadow: 0 28px 90px rgba(0,0,0,0.70);
-  padding: 22px 22px 18px 22px;
-  text-align: center;
+    radial-gradient(900px 520px at 82% 18%, rgba(167,139,250,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.22) 100%);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+  padding: 18px;
 }
 
 body.theme-black .modal {
