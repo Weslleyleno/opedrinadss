@@ -1876,7 +1876,7 @@ function initOpsCenter() {
     // ignore
   }
 
-  void show('ops');
+  void show('charts');
 }
 
 function setCentralTab(tab) {
