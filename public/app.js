@@ -1703,9 +1703,6 @@ function setProfileUIFromCurrent() {
   if (u) u.value = currentProfile?.username || '';
   setChartModeUI(currentProfile?.chart_mode || 'combo');
 
-  const mg = el('profileMonthlyGoal');
-  if (mg) mg.value = String(currentProfile?.monthly_goal ?? '');
-
   const email = el('profileEmail');
   if (email) email.value = '';
   const pass = el('profilePassword');
@@ -1916,6 +1913,52 @@ function setupAuthTabs() {
       tabLogin.classList.add('active');
       panelLogin.style.display = 'block';
       hideAlert('authAlert');
+    });
+  }
+
+  const setMonthlyGoalBtn = el('setMonthlyGoalBtn');
+  if (setMonthlyGoalBtn) {
+    setMonthlyGoalBtn.addEventListener('click', async () => {
+      if (!await ensureSupabaseReady()) return;
+      if (!currentSession?.user?.id) return;
+
+      const current = toNumber(currentProfile?.monthly_goal);
+      const raw = await promptModal('Definir meta mensal', 'Digite sua meta do mês (R$).', {
+        okLabel: 'Salvar',
+        cancelLabel: 'Cancelar',
+        icon: 'fa-bullseye',
+        inputType: 'number',
+        placeholder: '0,00',
+        value: current ? String(current) : ''
+      });
+      if (raw == null) return;
+
+      const goal = toNumber(String(raw).replace(',', '.'));
+      if (!(goal >= 0)) {
+        toast('warn', 'Meta inválida', 'Digite um valor válido.');
+        return;
+      }
+
+      const { data, error } = await sb
+        .from('profiles')
+        .update({ monthly_goal: goal })
+        .eq('id', currentSession.user.id)
+        .select('id, username, is_admin, chart_mode, avatar_id, avatar_url, monthly_goal')
+        .single();
+
+      if (error) {
+        toast('error', 'Erro', error.message || 'Erro ao salvar meta.');
+        return;
+      }
+
+      currentProfile = data;
+      toast('success', 'Meta salva', 'Meta mensal atualizada.');
+
+      try {
+        await loadRanking();
+      } catch {
+        // ignore
+      }
     });
   }
 
@@ -3878,7 +3921,6 @@ async function boot() {
       const email = (el('profileEmail')?.value || '').trim();
       const password = (el('profilePassword')?.value || '');
       const avatarId = avatarIdOrDefault(__selectedAvatarId || AVATARS[0].id);
-      const monthlyGoal = toNumber(el('profileMonthlyGoal')?.value);
 
       if (!username) {
         if (hint) hint.textContent = 'Username inválido.';
@@ -3887,7 +3929,7 @@ async function boot() {
 
       const { data, error } = await sb
         .from('profiles')
-        .update({ username, chart_mode: mode, avatar_id: avatarId, monthly_goal: monthlyGoal })
+        .update({ username, chart_mode: mode, avatar_id: avatarId })
         .eq('id', currentSession.user.id)
         .select('id, username, is_admin, chart_mode, avatar_id, avatar_url, monthly_goal')
         .single();
