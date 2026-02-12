@@ -111,6 +111,7 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'POST') {
     const email = typeof parsed.email === 'string' ? parsed.email.trim() : '';
     const password = typeof parsed.password === 'string' ? parsed.password : '';
+    const usernameRaw = typeof parsed.username === 'string' ? parsed.username.trim() : '';
     const isAdmin = parsed.is_admin === true;
 
     if (!email) return json(400, { error: 'Email is required' });
@@ -127,7 +128,7 @@ exports.handler = async (event) => {
       const userId = created?.user?.id ? String(created.user.id) : '';
       if (!userId) return json(500, { error: 'Failed to create user' });
 
-      const username = email.includes('@') ? email.split('@')[0] : email;
+      const username = usernameRaw || (email.includes('@') ? email.split('@')[0] : email);
       const { error: upErr } = await admin
         .from('profiles')
         .upsert({ id: userId, username, is_admin: isAdmin }, { onConflict: 'id' });
@@ -144,6 +145,7 @@ exports.handler = async (event) => {
     const id = typeof parsed.id === 'string' ? parsed.id.trim() : '';
     const email = typeof parsed.email === 'string' ? parsed.email.trim() : '';
     const password = typeof parsed.password === 'string' ? parsed.password : '';
+    const usernameRaw = typeof parsed.username === 'string' ? parsed.username.trim() : '';
     const isAdmin = parsed.is_admin === true;
 
     if (!id) return json(400, { error: 'id is required' });
@@ -159,8 +161,8 @@ exports.handler = async (event) => {
         if (uErr) return json(500, { error: uErr.message });
       }
 
-      if (email || typeof parsed.is_admin === 'boolean') {
-        const username = email ? (email.includes('@') ? email.split('@')[0] : email) : undefined;
+      if (email || typeof parsed.is_admin === 'boolean' || usernameRaw) {
+        const username = usernameRaw || (email ? (email.includes('@') ? email.split('@')[0] : email) : undefined);
         const profilePatch = { id, is_admin: isAdmin };
         if (username) profilePatch.username = username;
 

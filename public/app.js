@@ -3011,10 +3011,12 @@ function clearAdminUserForm() {
   const id = el('adminUserEditingId');
   const email = el('adminUserEmail');
   const pass = el('adminUserPassword');
+  const uname = el('adminUserUsername');
   const isAdmin = el('adminUserIsAdmin');
   if (id) id.value = '';
   if (email) email.value = '';
   if (pass) pass.value = '';
+  if (uname) uname.value = '';
   if (isAdmin) isAdmin.checked = false;
   const hint = el('adminUsersHint');
   if (hint) {
@@ -4258,6 +4260,7 @@ async function boot() {
       const id = (el('adminUserEditingId')?.value || '').trim();
       const email = (el('adminUserEmail')?.value || '').trim();
       const password = (el('adminUserPassword')?.value || '');
+      const username = (el('adminUserUsername')?.value || '').trim();
       const isAdmin = Boolean(el('adminUserIsAdmin')?.checked);
 
       try {
@@ -4265,9 +4268,9 @@ async function boot() {
         if (!id && !password) throw new Error('Defina uma senha para criar o usuário.');
 
         if (!id) {
-          await adminUsersApi('POST', { email, password, is_admin: isAdmin });
+          await adminUsersApi('POST', { email, password, username: username || undefined, is_admin: isAdmin });
         } else {
-          await adminUsersApi('PUT', { id, email, password: password || undefined, is_admin: isAdmin });
+          await adminUsersApi('PUT', { id, email, username: username || undefined, password: password || undefined, is_admin: isAdmin });
         }
 
         clearAdminUserForm();
@@ -4329,6 +4332,7 @@ async function boot() {
           if (el('adminUserEditingId')) el('adminUserEditingId').value = id;
           if (el('adminUserEmail')) el('adminUserEmail').value = row?.email || '';
           if (el('adminUserPassword')) el('adminUserPassword').value = '';
+          if (el('adminUserUsername')) el('adminUserUsername').value = row?.username || '';
           if (el('adminUserIsAdmin')) el('adminUserIsAdmin').checked = Boolean(row?.is_admin);
           return;
         }
