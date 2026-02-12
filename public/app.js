@@ -1853,7 +1853,7 @@ function showPage(page) {
       ops: 'Operações',
       charts: 'Gráficos',
       ranking: 'Ranking',
-      central: 'Central',
+      central: 'Central de recursos',
       expenses: 'Gastos',
       profile: 'Perfil',
       admin: 'Admin'
